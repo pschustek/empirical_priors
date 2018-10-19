@@ -49,6 +49,7 @@ The following table indicates which Matlab script can be used to produce the res
 |Fig. S6d | /results/exp2/supp_info/si_prior_modulation_N_previous_trial.m |
 |Fig. S6e | /results/exp2/supp_info/si_prior_weight_previous_trials.m |
 |Fig. S6f | /results/exp2/supp_info/si_prior_accum_block_length.m |
+
 Some more code refactoring might be done in the future, depending as well on changes to the analysis.
 
 ### Remarks on data availability
