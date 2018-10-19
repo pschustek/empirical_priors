@@ -5,20 +5,24 @@ This repository contains the Matlab code to carry out the data analysis for the 
 
 ## Structure
 ```
-/src contains .. and must be on the Matlab search path.
-/data The data will be released upon final acceptance
-/illustrations 
-/results
-	/exp1 # comment 
+./illustrations 
+	/exp1 	
+	/exp2
+./models	# compute CVLL
+	/exp1 	
+	/exp2
+./results
+	/exp1 	
 		/si
 	/exp2
-/models 
+		/si
+./src 		# function repository
 ```
 
 ## Usage
-Mapping from figure panels to Matlab scripts
+The following table indicates which Matlab script can be used to produce the results.
 
-| Figure | script | 
+| Figure | Script | 
 |---------------|---------------|
 |Fig. 1a | /illustrations/exp1/exp1_task_schema.m |
 |Fig. 1b | /illustrations/exp1/exp1_sample_size_dependence.m |
@@ -45,8 +49,8 @@ Mapping from figure panels to Matlab scripts
 |Fig. S6d | /results/exp2/supp_info/si_prior_modulation_N_previous_trial.m |
 |Fig. S6e | /results/exp2/supp_info/si_prior_weight_previous_trials.m |
 |Fig. S6f | /results/exp2/supp_info/si_prior_accum_block_length.m |
+Some more code refactoring might be done in the future, depending as well on changes to the analysis.
 
-For convenience the fields in data structure provide responses of the ideal observer model
-
-The present code might be subjected to some more refactoring in the future.
+### Remarks on data availability
+The original behavioral data used in this analysis will be released upon final publication of the manuscript. For convenience, the fields in data structure provide responses of the ideal observer model. 
 
