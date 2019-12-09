@@ -3,12 +3,15 @@
 clear variables
 close all
 
+nu1 = 12;
+nu2 = 9; % for heuristics model
+
 %% Setup
 % Add path to auxiliary functions
 addpath('.\..\..\src\');
 
 % Subselect subjects
-subInd = [1:20 22:24];
+subInd = 1:24;
 
 % Load data
 load('.\..\..\data\exp2_data.mat');
@@ -28,22 +31,28 @@ binCenter = [diff(edges)/2 + edges(1:end-1)]';
 
 %% Prepare data
 for s=subInd
-
-    clear trials    
+    
+    clear trials
     trials = trialData{s};
-
+    
     mEv = trials.meanEvidence;
+    N = trials.sampleSize;
     response = trials.confHeads;
     optRes = trials.optConfHeads;
-
-    binIdx = discretize(mEv,edges);     
+    heurRes = opt_inf.all_approx( mEv.*N, N, trials.blockLength(1), nu1, nu2 );
+    
+    
+    binIdx = discretize(mEv,edges);
     [G,~,bb] = findgroups(binIdx, trials.blockBias);
     res = splitapply(@mean,response,G);
     sub(s).confBin = [res(bb==1) res(bb==0)];
     
     res = splitapply(@mean,optRes,G);
     opt(s).confBin = [res(bb==1) res(bb==0)];
-
+    
+    res = splitapply(@mean,heurRes,G);
+    heur(s).confBin = [res(bb==1) res(bb==0)];
+    
 end
 
 %% Aggregate across participants
@@ -51,6 +60,8 @@ confMean = mean(cat(3,sub.confBin),3);
 confSEM = std(cat(3,sub.confBin),[],3)/sqrt(numel(subInd));
 
 confMeanOpt = mean(cat(3,opt.confBin),3);
+confMeanHeur = mean(cat(3,heur.confBin),3);
+
 
 %% Plot
 figure(1);
@@ -64,6 +75,9 @@ hold on
 
 h(1) = plot(binCenter*100,confMeanOpt(:,1), 'Color', hsv2rgb([.5 .5 0.9]), 'LineWidth', LW+2);
 h(2) = plot(binCenter*100,confMeanOpt(:,2), 'Color', hsv2rgb([.86 .5 0.9]), 'LineWidth', LW+2);
+
+%h(1) = plot(binCenter*100,confMeanHeur(:,1), 'Color', hsv2rgb([.5 .5 0.9]),'marker','o', 'linestyle','none','LineWidth', LW+2);
+%h(2) = plot(binCenter*100,confMeanHeur(:,2), 'Color',  hsv2rgb([.86 .5 0.9]), 'marker','o','linestyle','none', 'LineWidth', LW+2);
 
 q = linspace(0,100,200);
 plot(q,q/100, 'Color', [1 1 1]*0.8, 'LineWidth', 0.8, 'LineStyle', '--');
@@ -96,7 +110,7 @@ set(gcf, 'PaperUnits', 'centimeters', 'PaperPositionMode', 'manual',...
 
 % Axes
 set(gca, 'Box', 'off', 'FontSize', FS, 'FontName', 'Times', 'TickDir', 'out', 'OuterPosition', [0 0 1 1],...  % try to place axes first
-        'XMinorTick', 'off', 'YMinorTick', 'off', 'XGrid', 'off',  'YGrid', 'off', 'Layer', 'top');
+    'XMinorTick', 'off', 'YMinorTick', 'off', 'XGrid', 'off',  'YGrid', 'off', 'Layer', 'top');
 
 %% Print
 print(gcf, '-dpng', '-r400', '.\..\..\plots\exp2\prior_psychometric_context.png');

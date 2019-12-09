@@ -2,7 +2,7 @@ function [ LL, S ] = f_obj_adapt( Ymodel, Y, varargin )
 %f_obj_adapt Model of the response noise
 %   Use of truncated normal distribution
 
-eps = 1.34E-4;  % normpdf(4,0,1)
+eps = 1.34E-4;  realmin; % normpdf(4,0,1)
 
 if nargin>=3
     % Use passed value as function argument
@@ -20,6 +20,7 @@ if nargin==2
     ub = quantile(res,0.75) + 3*iqr(res);
     trimmed = res((res>=lb)&(res<=ub));
     S = sqrt(mean(trimmed.^2));
+    S = max(S, 0.01); % minimal value for noise to avoid singular solutions explaining boundary responses
 end
 
 % Calculate LL for all values (even trimmed)

@@ -1,5 +1,6 @@
-function [ fh ] = genlogf( X, w )
-%genlogf Wrapper for generalized logistic sigmoid function
+function [ fh ] = genlogf2( X, w )
+%genlogf Wrapper for generalized logistic sigmoid function with LLR
+%function first
 
 tmp = [X; num2cell(w')];
 
@@ -33,8 +34,10 @@ fh = glogf(tmp{:});
         [B, M, A, K, nu, Q, C] = optargs{:};
         
         x = X(:);
-                
-        Y = A + (K-A)./(C+Q.*exp(-B.*(x-M))).^(1./nu);
+        
+        xx = log(x./(1-x)); % LLR
+        
+        Y = A + (K-A)./(C+Q.*exp(-B.*(xx-M))).^(1./nu);
         
         Y = reshape(Y, size(X));
     end

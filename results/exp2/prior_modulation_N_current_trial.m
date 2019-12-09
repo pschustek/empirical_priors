@@ -2,12 +2,16 @@
 clear variables
 close all
 
+
 %% Setup
 % Add path to auxiliary functions
 addpath('.\..\..\src\');
 
 % Subselect subjects
-subInd = [1:20 22:24];
+subInd = 1:24; % Alex
+
+nu1 = 14;
+nu2 = 9; % for heuristics model
 
 % Load data
 load('.\..\..\data\exp2_data.mat')
@@ -29,30 +33,35 @@ binCenter = [diff(edges)/2 + edges(1:end-1)]';
 
 %% Prepare data
 for s=subInd
-
-    clear trials    
+    
+    clear trials
     trials = trialData{s};
-
+    
     mEv = trials.meanEvidence;
     N = trials.sampleSize;
     
     response = trials.confHeads;
     optRes = trials.optConfHeads;
-
+    
+    % compute heuristics
+    heurRes = opt_inf.all_approx( mEv.*N, N, trials.blockLength(1), nu1, nu2 );
+    
+    
     % Align with real block bias
     block = 2*(trials.blockBias-0.5);
     response = block.*(response-0.5) + 0.5;
     optRes = block.*(optRes-0.5) + 0.5;
+    heurRes = block.*(heurRes-0.5) + 0.5;
     mEv = block.*(mEv-0.5) + 0.5;
-
+    
     %% Make groupings according to mEv and previous block evidence
-    % Mask for mEv 
-    binIdx = discretize(mEv,edges);     
-
-    few = N < quantile(N,0.4);              
+    % Mask for mEv
+    binIdx = discretize(mEv,edges);
+    
+    few = N < quantile(N,0.4);
     many = N >= quantile(N,0.6);
-    groupMask = logical([few many]);    
-    allConditions = any(groupMask,2);   
+    groupMask = logical([few many]);
+    allConditions = any(groupMask,2);
     
     [G,~,bb] = findgroups(binIdx(allConditions), groupMask(allConditions,1));
     res = splitapply(@mean,response(allConditions),G);
@@ -60,6 +69,10 @@ for s=subInd
     
     res = splitapply(@mean,optRes(allConditions),G);
     opt(s).confBin = [res(bb==1) res(bb==0)];
+    
+    res = splitapply(@mean,heurRes(allConditions),G);
+    heur(s).confBin = [res(bb==1) res(bb==0)];
+    
     
     % Fit for small N
     mdl = fitlm(mEv(few), response(few));
@@ -72,7 +85,7 @@ for s=subInd
     sub(s).many_slope = mdl.Coefficients.Estimate(2);
     
     sub(s).diff_slope = sub(s).many_slope - sub(s).few_slope;
-
+    
 end
 
 %% Aggregate across participants
@@ -80,10 +93,11 @@ confMean = mean(cat(3,sub.confBin),3);
 confSEM = std(cat(3,sub.confBin),[],3)/sqrt(numel(subInd));
 
 confMeanOpt = mean(cat(3,opt.confBin),3);
+confMeanHeur = mean(cat(3,heur.confBin),3);
 
 % Test on group level
 tmp = cat(1,sub.confBin);
-tmpF = reshape(tmp(:,1),nbins,[]);     
+tmpF = reshape(tmp(:,1),nbins,[]);
 tmpM = reshape(tmp(:,2),nbins,[]);
 for n=1:nbins
     F = tmpF(n,:);
@@ -100,6 +114,7 @@ fprintf('- [result] p-value = %.3e\n', p);
 
 %% Plot
 figure(1);
+figname = 'prior_modulation_N_current_trial';
 clf;
 LW = 1.2;
 FS = 7;
@@ -118,6 +133,7 @@ blockLineStyle = {'-','-','-'};
 colorMap = [hsv2rgb([.08 .5 0.85]); hsv2rgb([.33 .5 .85]) ; 0.59 0.82 0.59];
 legIdx = 1:2;
 for b=1:size(groupMask,2)
+    % optimal + heuristics
     h(legIdx(b)) = plot(binCenter*100,confMeanOpt(:,b),'Color',colorMap(b,:),'LineStyle',blockLineStyle{b},'LineWidth',LW+3);
 end
 
@@ -130,24 +146,24 @@ for b=1:size(groupMask,2)
 end
 
 for j=1:1
-    if all_pval_few(j)<=0.05 & all_pval_few(j)>0.01
+    if all_pval_few(j)<=0.05 && all_pval_few(j)>0.01
         text(binCenter(j)*100,confMean(j)+0.05,'$\ast$','Interpreter','latex','FontSize', FS,'FontName','Times',...
             'HorizontalAlignment','center','VerticalAlignment','middle');
     end
     
-    if all_pval_few(j)<=0.01 
+    if all_pval_few(j)<=0.01
         text(binCenter(j)*100,confMean(j)+0.05,'$\ast\ast$','Interpreter','latex','FontSize', FS,'FontName','Times',...
             'HorizontalAlignment','center','VerticalAlignment','middle');
     end
 end
 
 for j=3:length(binCenter)
-    if all_pval_many(j)<=0.05 & all_pval_many(j)>0.01
+    if all_pval_many(j)<=0.05 && all_pval_many(j)>0.01
         text(binCenter(j)*100,confMean(j)-0.05,'$\ast$','Interpreter','latex','FontSize', FS,'FontName','Times',...
             'HorizontalAlignment','center','VerticalAlignment','middle');
     end
     
-    if all_pval_many(j)<=0.01 
+    if all_pval_many(j)<=0.01
         text(binCenter(j)*100,confMean(j)-0.05,'$\ast\ast$','Interpreter','latex','FontSize', FS,'FontName','Times',...
             'HorizontalAlignment','center','VerticalAlignment','middle');
     end
@@ -181,5 +197,6 @@ set(gcf, 'PaperUnits', 'centimeters', 'PaperPositionMode', 'manual',...
 set(gca, 'Box', 'off', 'FontSize', FS, 'FontName', 'Times', 'TickDir', 'out', 'OuterPosition', [0 0 1 1],...  % try to place axes first
     'XMinorTick', 'off', 'YMinorTick', 'off', 'XGrid', 'off',  'YGrid', 'off', 'Layer', 'top');
 
-%%
-print(gcf, '-dpng', '-r400', '.\..\..\plots\exp2\prior_modulation_N_current_trial.png');
+%% save figure
+filename = fullfile( '.\..\..\plots\exp2', [figname '.png']);
+print(gcf, '-dpng', '-r400', filename);

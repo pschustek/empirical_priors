@@ -50,7 +50,24 @@ for s=1:numCrossVal
     sampleWeightAll(s,:) = w;
 end
 
-% Save data of optimization procedure
+%% train on whole dataset to extract parameters (added by Alex)
+ % Optimization
+  [ fval, ~, w] = ml_ga_fmincon( Xdat, Ydat, f_model, x0, lb, ub, opts, ilb, iub, psize );
+    
+
+  
+    % Model output for fitted parameters
+    Ymodel = f_model(w,Xdat);
+% Estimate of the SD of the response distribution on
+    % whole dataset set
+  [ ~, S ] = f_obj_adapt( Ymodel, Ydat );
+
+  % compute expected value of model with truncated gaussian noise  
+  alpha = -Ymodel/S;
+  beta = (1-Ymodel)/S;
+  Yexpected = Ymodel + S*(normpdf(alpha)-normpdf(beta))./(normcdf(beta)-normcdf(alpha));
+  
+%% Save data of optimization procedure
 results.model = f_model;
 results.LLH = LLH;
 results.RMSE = RMSE;
@@ -63,6 +80,9 @@ results.iub = iub;
 results.lb = lb;
 results.ub = ub;
 results.psize = psize;
-
+results.params = w; % parameters fitted on whole dataset
+results.Yhat = Ymodel; % estimated value for each parameter
+results.Y = Yexpected; % expected value for each parameter (taking into account truncated gaussian noise)
+results.std = S; % estimated standard deviation of noise
 end
 

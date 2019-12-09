@@ -2,64 +2,86 @@
 clear variables
 close all
 
+nu1 = 12;
+nu2 = 9; % for heuristics model
+
+
 %% Setup
 % Add path to auxiliary functions
 addpath('.\..\..\src\');
 
 % Subselect subjects
-subInd = [1:20 22:24];
+subInd = 1:24;
 
 % Load data
-load('.\..\..\data\exp2_data.mat')
+load('.\..\..\data\exp2_data.mat');
+
 
 for s=subInd
-
-    clear trials    
+    
+    clear trials
     trials = trialData{s};
-
+    
     mEv = trials.meanEvidence;
+    N = trials.sampleSize;
     blockLength = unique(trials.blockLength);
     numTrials = size(trials.num,1);
     inBlock = trials.trialInBlock;
     blockInd = ceil([1:numTrials]'/unique(trials.blockLength));
-
+    
     response = trials.confHeads;
     optRes = trials.optConfHeads;
-
+    heurRes = opt_inf.all_approx( mEv.*N, N, trials.blockLength(1), nu1, nu2 );
+    
+    
+    
     % Align with real block bias
     block = 2*(trials.blockBias-0.5);
     response = block.*(response-0.5) + 0.5;
     optRes = block.*(optRes-0.5) + 0.5;
-
+    heurRes = block.*(heurRes-0.5) + 0.5;
+    
+    
+    
+    
     %% Median conditioned on in/block trial
     bMask = inBlock==1:blockLength;
     R = nan(numTrials/blockLength,blockLength);
     M = nan(numTrials/blockLength,blockLength);
+    H = nan(numTrials/blockLength,blockLength);
     for j=1:blockLength
         R(:,j) = response(bMask(:,j));
         M(:,j) = optRes(bMask(:,j));
+        H(:,j) = heurRes(bMask(:,j));
     end
-    
     sub(s).res = R;
-    sub(s).resModel = M;
+    sub(s).resOpt = M;
+    sub(s).resHeur = H;
     sub(s).avg = mean(R);
-    sub(s).avgModel = mean(M);
+    sub(s).avgOpt = mean(M);
+    sub(s).avgHeur = mean(H);
+    
 end
 
 %% Aggregate across participants
 allMed = cat(1,sub.avg);
-allOptw = cat(1,sub.avgModel);
+allOptw = cat(1,sub.avgOpt);
+allHeurw = cat(1,sub.avgHeur);
+
 
 wMean = mean(allMed,1);
 wSEM = std(allMed,[],1)/sqrt(numel(subInd));
 
 wMeanOpt = mean(allOptw);
+wHeurOpt = mean(allHeurw);
+
+
 
 %% Prior belief accumulation
 % Four preditors
 tmpY = allMed;
 tmpX = repmat([1 2 3 4 5],numel(subInd),1);
-% weight over trial index 
+% weight over trial index
 mdl = fitlm(tmpX(:),tmpY(:),'linear');
 w_pval = mdl.Coefficients.pValue(2);
 % fprintf('>> Reported result in manuscript: p-value = %d\n', w_pval);
@@ -74,6 +96,9 @@ all_pval = signrank(last,first,'tail','right');
 LW = 1.2;
 FS = 11;
 figure(1);
+figname = 'prior_accum_block_length';
+
+
 width = 8;
 height = 6.5;
 clf;
@@ -106,7 +131,8 @@ set(gcf, 'PaperUnits', 'centimeters', 'PaperPositionMode', 'manual',...
 
 % Axes
 set(gca, 'Box', 'off', 'FontSize', FS, 'FontName', 'Times', 'TickDir', 'out', 'OuterPosition', [0 0 1 1],...  % try to place axes first
-        'XGrid', 'off',  'YGrid', 'off', 'Layer', 'top','XTick',1:blockLength);
+    'XGrid', 'off',  'YGrid', 'off', 'Layer', 'top','XTick',1:blockLength);
 
 %% Print
-print(gcf, '-dpng', '-r400', '.\..\..\plots\exp2\prior_accum_block_length.png');
+filename = fullfile( '.\..\..\plots\exp2', [figname '.png']);
+print(gcf, '-dpng', '-r400', filename);

@@ -7,7 +7,7 @@ close all
 addpath('.\..\..\src\');
 
 % Subselect subjects
-subInd = [1:20 22:24];
+subInd = 1:24;
 
 % Load data
 load('.\..\..\models\exp2\prior_ml.mat')
