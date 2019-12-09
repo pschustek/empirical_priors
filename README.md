@@ -1,6 +1,6 @@
 # Human confidence judgments reflect reliability-based hierarchical integration of contextual information
 
-This repository contains the Matlab code to carry out the data analysis for the manuscript entitled "Human confidence judgments reflect reliability-based hierarchical integration of contextual information" by P. Schustek, A. Hyafil and R. Moreno-Bote, published in 2019 at Nature Communications ([link ](https://www.nature.com/articles/s41467-019-13472-z)).
+This repository contains the Matlab code to carry out the data analysis for the manuscript entitled "Human confidence judgments reflect reliability-based hierarchical integration of contextual information" by P. Schustek, A. Hyafil and R. Moreno-Bote, published in 2019 at Nature Communications ([link](https://www.nature.com/articles/s41467-019-13472-z)).
 
 
 ## Structure
@@ -20,7 +20,7 @@ This repository contains the Matlab code to carry out the data analysis for the 
 ```
 
 ## Usage
-The following table indicates which Matlab script can be used to produce the results.
+The following table indicates which Matlab script can be used to produce the results. Please note that model-based results require executing the respective models or some fits before.
 
 | Figure | Script | 
 |---------------|---------------|
